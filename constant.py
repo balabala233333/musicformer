@@ -26,7 +26,7 @@ CHECKPOINT_PATH = os.path.join(WORKSPACE, "conformer")
 if not os.path.exists(CHECKPOINT_PATH):
     os.mkdir(CHECKPOINT_PATH)
 
-TEST_NOTE_CHECKPOINT_NAME = r"conformer/conformer_las_6"
+TEST_NOTE_CHECKPOINT_NAME = r"conformer/conformer_las_8"
 TEST_NOTE_CHECKPOINT_PATH = os.path.join(WORKSPACE, TEST_NOTE_CHECKPOINT_NAME)
 
 TEST_PEDAL_CHECKPOINT_NAME = r"conformer/conformer_pedal_6"

@@ -193,4 +193,7 @@ def get_pedal_score(ref_ns: note_seq.NoteSequence, est_ns: note_seq.NoteSequence
             est_pitches=est_pitches, onset_tolerance=0.05, offset_ratio=0.2, offset_min_tolerance=0.05))
     onset_offset_item = EvaluationItem('onset_offset_score', f1_score=f_measure, precision_score=precision,
                                        recall_score=recall)
-    return onset_item, onset_offset_item
+    return {
+        "onset_score": onset_item,
+        "onset_offset_score": onset_offset_item
+    }

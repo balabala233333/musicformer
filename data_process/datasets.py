@@ -16,7 +16,8 @@ from data_process.data_classes import DatasetConfig, FileNamePair, MidiAudioPair
 
 def build_maestrov3_dataset() -> DatasetConfig:
     config = DatasetConfig('maestrov3', BASE_MAESTROV3_PATH, BASE_MAESTROV3_CACHE_PATH, BASE_MAESTROV3_SPLIT_PATH,
-                           BASE_MAESTROV3_PEDAL_CACHE_PATH, BASE_MAESTROV3_PEDAL_SPLIT_PATH,BASE_MAESTROV3_PEDAL_NOTE_CACHE_PATH,BASE_MAESTROV3_PEDAL_NOTE_SPLIT_PATH ,[],
+                           BASE_MAESTROV3_PEDAL_CACHE_PATH, BASE_MAESTROV3_PEDAL_SPLIT_PATH,
+                           BASE_MAESTROV3_PEDAL_NOTE_CACHE_PATH, BASE_MAESTROV3_PEDAL_NOTE_SPLIT_PATH, [],
                            [], [])
     json_path = os.path.join(config.base_file_path, "maestro-v3.0.0.json")
     with open(json_path, 'r') as file:
@@ -45,7 +46,8 @@ def build_maestrov3_dataset() -> DatasetConfig:
 
 def build_maestrov1_dataset() -> DatasetConfig:
     config = DatasetConfig('maestrov1', BASE_MAESTROV1_PATH, BASE_MAESTROV1_CACHE_PATH, BASE_MAESTROV1_SPLIT_PATH,
-                           BASE_MAESTROV1_PEDAL_CACHE_PATH, BASE_MAESTROV1_PEDAL_SPLIT_PATH,BASE_MAESTROV1_PEDAL_NOTE_CACHE_PATH,BASE_MAESTROV1_PEDAL_NOTE_SPLIT_PATH, [],
+                           BASE_MAESTROV1_PEDAL_CACHE_PATH, BASE_MAESTROV1_PEDAL_SPLIT_PATH,
+                           BASE_MAESTROV1_PEDAL_NOTE_CACHE_PATH, BASE_MAESTROV1_PEDAL_NOTE_SPLIT_PATH, [],
                            [], [])
     json_path = os.path.join(config.base_file_path, "maestro-v1.0.0.json")
     with open(json_path, 'r') as file:
@@ -71,7 +73,8 @@ def build_maestrov1_dataset() -> DatasetConfig:
 
 def build_maestrov2_dataset() -> DatasetConfig:
     config = DatasetConfig('maestrov2', BASE_MAESTROV2_PATH, BASE_MAESTROV2_CACHE_PATH, BASE_MAESTROV2_SPLIT_PATH,
-                           BASE_MAESTROV2_PEDAL_CACHE_PATH, BASE_MAESTROV2_PEDAL_SPLIT_PATH,BASE_MAESTROV2_PEDAL_NOTE_CACHE_PATH,BASE_MAESTROV2_PEDAL_NOTE_SPLIT_PATH, [],
+                           BASE_MAESTROV2_PEDAL_CACHE_PATH, BASE_MAESTROV2_PEDAL_SPLIT_PATH,
+                           BASE_MAESTROV2_PEDAL_NOTE_CACHE_PATH, BASE_MAESTROV2_PEDAL_NOTE_SPLIT_PATH, [],
                            [], [])
     json_path = os.path.join(config.base_file_path, "maestro-v2.0.0.json")
     with open(json_path, 'r') as file:
@@ -104,6 +107,11 @@ def trans_path_to_raw_data(pair: FileNamePair) -> MidiAudioPair:
     midi = note_seq.midi_file_to_note_sequence(midi_file_name)
     if PEDAL_EXTEND:
         midi = note_seq.apply_sustain_control_changes(midi)
+    for cc in midi.control_changes:
+        if cc.control_value >= 64:
+            cc.control_number = 64
+        else:
+            cc.control_number = 0
     midi_audio_pair = MidiAudioPair(id=id, midi_file_name=midi_file_name, audio_file_name=audio_file_name, audio=audio,
                                     midi=midi, cache_path=cache_path)
     return midi_audio_pair

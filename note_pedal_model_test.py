@@ -12,7 +12,7 @@ from data_process.spectrograms import SpectrogramConfig
 from data_process.vocabulary import TokensVocabulary, build_codec
 import tensorflow as tf
 
-from evaluation.metrics import get_scores
+from evaluation.metrics import get_scores, get_pedal_score
 from model.listen_attend_and_spell import load_conformer_listen_attend_and_spell_from_checkpoint
 
 tf.config.set_visible_devices([], 'GPU')
@@ -49,7 +49,8 @@ for pair in config.test_pairs:
         pred_ns = trans_tokens_to_midi(items, "res.midi")
         target_ns = note_seq.midi_file_to_note_sequence(
             pair.midi_file_name)
-        res = get_scores(target_ns, pred_ns)
+        res = get_pedal_score(target_ns, pred_ns)
+        print(res)
         mir_eval_onset_presion.append(res["onset_score"].precision_score)
         mir_eval_onset_recall.append(res["onset_score"].recall_score)
         mir_eval_onset_f1.append(res["onset_score"].f1_score)
