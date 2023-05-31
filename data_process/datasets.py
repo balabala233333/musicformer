@@ -105,13 +105,13 @@ def trans_path_to_raw_data(pair: FileNamePair) -> MidiAudioPair:
     id = pair.id
     audio = spectrograms.read_wave(audio_file_name, SAMPLE_RATE)
     midi = note_seq.midi_file_to_note_sequence(midi_file_name)
-    if PEDAL_EXTEND:
-        midi = note_seq.apply_sustain_control_changes(midi)
     for cc in midi.control_changes:
         if cc.control_value >= 64:
-            cc.control_number = 64
+            cc.control_value = 127
         else:
-            cc.control_number = 0
+            cc.control_value = 0
+    if PEDAL_EXTEND:
+        midi = note_seq.apply_sustain_control_changes(midi)
     midi_audio_pair = MidiAudioPair(id=id, midi_file_name=midi_file_name, audio_file_name=audio_file_name, audio=audio,
                                     midi=midi, cache_path=cache_path)
     return midi_audio_pair

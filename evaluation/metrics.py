@@ -2,6 +2,7 @@ import collections
 import dataclasses
 from typing import Tuple, Mapping
 
+import keras.metrics
 import mir_eval
 import note_seq
 import numpy as np
@@ -131,6 +132,11 @@ def calculate_onset_and_offset_velocity_score(target_ns: note_seq.NoteSequence,
 
 def get_scores(target_ns: note_seq.NoteSequence,
                prediction_ns: note_seq.NoteSequence) -> Mapping[str, EvaluationItem]:
+    # for note in prediction_ns.notes:
+    #     if note.end_time - note.start_time >= 4.5:
+    #         note.end_time = note.start_time+min(4.5,note.end_time-note.start_time)
+        # else:
+        #     note.end_time = note.end_time + 0.01
     if PEDAL_EXTEND:
         target_ns = note_seq.apply_sustain_control_changes(target_ns)
     return {
@@ -141,56 +147,57 @@ def get_scores(target_ns: note_seq.NoteSequence,
     }
 
 
-def trans_control_changes_to_onset_offset_events(ns: note_seq.NoteSequence, all_pedal: bool = False):
-    events = []
-    state = collections.defaultdict(lambda: False)
-    onset = []
-    offset = []
+def trans_control_changes_to_onset_offset_events(ns: note_seq.NoteSequence):
+    pedal_dict = {}
+    pedal_events = []
     pitch = []
     intervals = []
     for cc in ns.control_changes:
-        if all_pedal == False and cc.control_number != 64:
-            continue
-        value = cc.control_value
-        if value >= 64:
-            events.append((cc.time, _SUSTAIN_ON, cc))
-        elif value < 64:
-            events.append((cc.time, _SUSTAIN_OFF, cc))
-    for event in events:
-        time, s, cc = event
-        if state[cc.control_number] == _SUSTAIN_OFF and s == _SUSTAIN_ON:
-            onset.append(time)
-            state[cc.control_number] = _SUSTAIN_ON
-        elif state[cc.control_number] == _SUSTAIN_ON and s == _SUSTAIN_OFF:
-            offset.append(time)
-            pitch.append(cc.control_number)
-            state[cc.control_number] = _SUSTAIN_OFF
-    for k in state.keys():
-        if state[k] == _SUSTAIN_ON:
-            offset.append(time)
-            pitch.append(k)
-            state[cc.control_number] = _SUSTAIN_OFF
-    for k, v in zip(onset, offset):
-        intervals.append((k, v))
+        if cc.control_number == 64:
+            if cc.control_value >= 64:
+                if 'onset_time' not in pedal_dict:
+                    pedal_dict['onset_time'] = cc.time
+            else:
+                if 'onset_time' in pedal_dict:
+                    pedal_events.append({
+                        'onset_time': pedal_dict['onset_time'],
+                        'offset_time': cc.time})
+                    pedal_dict = {}
+    if 'onset_time' in pedal_dict.keys():
+        pedal_events.append({
+            'onset_time': pedal_dict['onset_time'],
+            'offset_time': ns.total_time})
+    for event in pedal_events:
+        if event['offset_time'] - event['onset_time'] > 0.01:
+            intervals.append((event['onset_time'], event['offset_time']))
+            pitch.append(64)
     return np.array(intervals), np.array(pitch)
 
 
-def get_pedal_score(ref_ns: note_seq.NoteSequence, est_ns: note_seq.NoteSequence, all_pedal: bool = False):
-    ref_intervals, ref_pitches = trans_control_changes_to_onset_offset_events(ref_ns, all_pedal)
-    est_intervals, est_pitches = trans_control_changes_to_onset_offset_events(est_ns, all_pedal)
+def get_pedal_score(ref_ns: note_seq.NoteSequence, est_ns: note_seq.NoteSequence):
+    ref_intervals, ref_pitches = trans_control_changes_to_onset_offset_events(ref_ns)
+    est_intervals, est_pitches = trans_control_changes_to_onset_offset_events(est_ns)
+    if len(ref_intervals) == 0 or len(est_intervals) == 0:
+        return {
+            "onset_score": EvaluationItem('onset_offset_score', f1_score=1, precision_score=1,
+                                          recall_score=1),
+            "onset_offset_score": EvaluationItem('onset_offset_score', f1_score=1, precision_score=1,
+                                                 recall_score=1)
+        }
+
     precision, recall, f_measure, avg_overlap_ratio = (
         mir_eval.transcription.precision_recall_f1_overlap(
             ref_intervals=ref_intervals,
             ref_pitches=ref_pitches,
             est_intervals=est_intervals,
-            est_pitches=est_pitches, offset_ratio=None))
+            est_pitches=est_pitches, offset_ratio=None,  onset_tolerance=0.2))
     onset_item = EvaluationItem('onset_score', f1_score=f_measure, precision_score=precision, recall_score=recall)
     precision, recall, f_measure, avg_overlap_ratio = (
         mir_eval.transcription.precision_recall_f1_overlap(
             ref_intervals=ref_intervals,
             ref_pitches=ref_pitches,
             est_intervals=est_intervals,
-            est_pitches=est_pitches, onset_tolerance=0.05, offset_ratio=0.2, offset_min_tolerance=0.05))
+            est_pitches=est_pitches, onset_tolerance=0.2, offset_ratio=0.2, offset_min_tolerance=0.05))
     onset_offset_item = EvaluationItem('onset_offset_score', f1_score=f_measure, precision_score=precision,
                                        recall_score=recall)
     return {

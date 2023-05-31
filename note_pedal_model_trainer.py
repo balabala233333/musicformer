@@ -6,7 +6,8 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from transformers import get_scheduler
 
-from constant import TokenConfig, LEARNING_RATE, BETAS, EPS, WEIGHT_DECAY, CHECKPOINT_PATH
+from constant import TokenConfig, LEARNING_RATE, BETAS, EPS, WEIGHT_DECAY, CHECKPOINT_PATH, NOTE_PEDAL_MODEL_EPOCHS, \
+    NOTE_PEDAL_MODEL_SCHEDULER_WARMUP_RATIO
 from data_process.datasets import build_maestrov3_dataset
 from data_set.data_set import TrainDataset, collate_fn, NotePedalDataset
 import tensorflow as tf
@@ -22,9 +23,9 @@ def note_pedal_model_train_step():
     dataset = NotePedalDataset(config, use_cache=True)
     data_loader = DataLoader(dataset, batch_size=8, collate_fn=collate_fn, num_workers=4, prefetch_factor=1,
                              shuffle=True)
-    epochs = NOTE_MODEL_EPOCHS
+    epochs = NOTE_PEDAL_MODEL_EPOCHS
     num_training_steps = epochs * len(data_loader)
-    scheduler_warmup_ratio = NOTE_MODEL_SCHEDULER_WARMUP_RATIO
+    scheduler_warmup_ratio = NOTE_PEDAL_MODEL_SCHEDULER_WARMUP_RATIO
     num_warmup_steps = int(num_training_steps * scheduler_warmup_ratio)
 
     model = build_conformer_listen_attend_and_spell_from_config()
