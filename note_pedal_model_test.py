@@ -32,10 +32,14 @@ frame_f1 = []
 mir_eval_vel_f1 = []
 mir_eval_vel_recall = []
 mir_eval_vel_presion = []
-cnt = 0
-tot = 0
+pedal_onset_f1 = []
+pedal_onset_recall = []
+pedal_onset_presion = []
+pedal_onset_offset_f1 = []
+pedal_onset_offset_recall = []
+pedal_onset_offset_presion = []
 for pair in config.test_pairs:
-    model = load_conformer_listen_attend_and_spell_from_checkpoint(TEST_PEDAL_CHECKPOINT_PATH)
+    model = load_conformer_listen_attend_and_spell_from_checkpoint("/data/lobby/mt3/conformer/conformer_note_pedal_20")
     model.eval()
     for pair in config.test_pairs:
         token_config = TokenConfig()
@@ -49,7 +53,7 @@ for pair in config.test_pairs:
         pred_ns = trans_tokens_to_midi(items, "res.midi")
         target_ns = note_seq.midi_file_to_note_sequence(
             pair.midi_file_name)
-        res = get_pedal_score(target_ns, pred_ns)
+        res = get_scores(target_ns, pred_ns)
         mir_eval_onset_presion.append(res["onset_score"].precision_score)
         mir_eval_onset_recall.append(res["onset_score"].recall_score)
         mir_eval_onset_f1.append(res["onset_score"].f1_score)
@@ -62,9 +66,21 @@ for pair in config.test_pairs:
         frame_precision.append(res["frame_score"].precision_score)
         frame_recall.append(res["frame_score"].recall_score)
         frame_f1.append(res["frame_score"].f1_score)
+        res = get_pedal_score(target_ns, pred_ns)
+        pedal_onset_presion.append(res["onset_score"].precision_score)
+        pedal_onset_recall.append(res["onset_score"].recall_score)
+        pedal_onset_f1.append(res["onset_score"].f1_score)
+        pedal_onset_offset_f1.append(res["onset_offset_score"].f1_score)
+        pedal_onset_offset_presion.append(res["onset_offset_score"].precision_score)
+        pedal_onset_offset_recall.append(res["onset_offset_score"].recall_score)
         print(res)
-    print(tot / cnt)
     df["name"] = name
+    df["pedal_onset_presion"] = pedal_onset_presion
+    df["pedal_onset_recall"] = pedal_onset_recall
+    df["pedal_onset_f1"] = pedal_onset_f1
+    df["pedal_onset_offset_f1"] = pedal_onset_offset_f1
+    df["pedal_onset_offset_presion"] = pedal_onset_offset_presion
+    df["pedal_onset_offset_recall"] = pedal_onset_offset_recall
     df["mir_eval_onset_presion"] = mir_eval_onset_presion
     df["mir_eval_onset_recall"] = mir_eval_onset_recall
     df["mir_eval_onset_f1"] = mir_eval_onset_f1
