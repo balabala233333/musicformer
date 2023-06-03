@@ -39,7 +39,7 @@ pedal_onset_offset_f1 = []
 pedal_onset_offset_recall = []
 pedal_onset_offset_presion = []
 for pair in config.test_pairs:
-    model = load_conformer_listen_attend_and_spell_from_checkpoint("/data/lobby/mt3/conformer/conformer_note_pedal_20")
+    model = load_conformer_listen_attend_and_spell_from_checkpoint("/data/lobby/mt3/conformer/conformer_note_pedal_40")
     model.eval()
     for pair in config.test_pairs:
         token_config = TokenConfig()
@@ -54,6 +54,7 @@ for pair in config.test_pairs:
         target_ns = note_seq.midi_file_to_note_sequence(
             pair.midi_file_name)
         res = get_scores(target_ns, pred_ns)
+        print(res)
         mir_eval_onset_presion.append(res["onset_score"].precision_score)
         mir_eval_onset_recall.append(res["onset_score"].recall_score)
         mir_eval_onset_f1.append(res["onset_score"].f1_score)
@@ -93,7 +94,7 @@ for pair in config.test_pairs:
     df["frame_f1"] = frame_f1
     df["frame_recall"] = frame_recall
     df["frame_precision"] = frame_precision
-    df.to_excel("res.xls")
+    df.to_excel("res.xlsx")
     print("onset_precision:", sum(mir_eval_onset_presion) / len(mir_eval_onset_presion))
     print("onset_recall:", sum(mir_eval_onset_recall) / len(mir_eval_onset_recall))
     print("onset_f1:", sum(mir_eval_onset_f1) / len(mir_eval_onset_f1))

@@ -33,7 +33,7 @@ def note_model_train_step():
     num_warmup_steps = int(num_training_steps * scheduler_warmup_ratio)
 
     # model = build_conformer_listen_attend_and_spell_from_config()
-    model = load_conformer_listen_attend_and_spell_from_checkpoint("/data/lobby/mt3/conformer/conformer_las_10")
+    model = load_conformer_listen_attend_and_spell_from_checkpoint("/data/lobby/mt3/conformer/conformer_las_181")
     criterion = CrossEntropyLoss()
     optimizer = AdamW(model.parameters(), lr=LEARNING_RATE, betas=BETAS, eps=EPS,
                       weight_decay=WEIGHT_DECAY)

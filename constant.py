@@ -20,14 +20,14 @@ ENCODER_INPUT_DIM = 512
 DECODER_INPUT_DIM = 512
 NUM_DECODER_LAYERS = 8
 NUM_DECODER_ATTENTION_HEADS = 8
-BATCH_SIZE = 8
+BATCH_SIZE = 1
 BEGIN_NOTE = 22
 CLASSES_NUM = 88
 CHECKPOINT_PATH = os.path.join(WORKSPACE, "conformer")
 if not os.path.exists(CHECKPOINT_PATH):
     os.mkdir(CHECKPOINT_PATH)
-
-TEST_NOTE_CHECKPOINT_NAME = r"conformer/conformer_las_23"
+# 181
+TEST_NOTE_CHECKPOINT_NAME = r"conformer/conformer_las_0"
 #BEST 232
 #BEST 241
 #BEST 156
@@ -43,7 +43,7 @@ TEST_PEDAL_CHECKPOINT_PATH = os.path.join(WORKSPACE, TEST_PEDAL_CHECKPOINT_NAME)
 TEST_NOTE_PEDAL_CHECKPOINT_NAME = r""
 TEST_NOTE_PEDAL_CHECKPOINT_PATH = os.path.join(WORKSPACE,TEST_NOTE_PEDAL_CHECKPOINT_NAME)
 
-DEVICE = torch.device("cpu")
+DEVICE = torch.device("cuda:0")
 
 
 @dataclasses.dataclass
@@ -181,13 +181,13 @@ DECODED_EOS_ID = -1
 DECODED_INVALID_ID = -2
 
 # =============================optimizer================================
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.00001
 BETAS = [0.9, 0.98]
 EPS = 1e-08
 WEIGHT_DECAY = 0.01
 
 # =============================note_model================================
-NOTE_MODEL_EPOCHS = 200
+NOTE_MODEL_EPOCHS = 2
 NOTE_MODEL_SCHEDULER_WARMUP_RATIO = 1 / (3 * NOTE_MODEL_EPOCHS)
 
 PEDAL_MODEL_EPOCHS = 400

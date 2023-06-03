@@ -78,7 +78,7 @@ if __name__ == '__main__':
     df["frame_f1"] = frame_f1
     df["frame_recall"] = frame_recall
     df["frame_precision"] = frame_precision
-    df.to_excel("res.xls")
+    df.to_excel("res.xlsx")
     print("onset_precision:", sum(mir_eval_onset_presion) / len(mir_eval_onset_presion))
     print("onset_recall:", sum(mir_eval_onset_recall) / len(mir_eval_onset_recall))
     print("onset_f1:", sum(mir_eval_onset_f1) / len(mir_eval_onset_f1))
