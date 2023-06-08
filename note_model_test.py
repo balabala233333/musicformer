@@ -47,6 +47,7 @@ if __name__ == '__main__':
             inputs = torch.unsqueeze(item.inputs, dim=0).to(token_config.device)
             input_lengths = torch.unsqueeze(item.input_lengths, dim=0).to(token_config.device)
             item.pred = model.recognize(inputs, input_lengths)[0]
+            print(item.pred)
         pred_ns = trans_tokens_to_midi(items, "res.midi")
         target_ns = note_seq.midi_file_to_note_sequence(
             pair.midi_file_name)
@@ -64,7 +65,7 @@ if __name__ == '__main__':
         frame_recall.append(res["frame_score"].recall_score)
         frame_f1.append(res["frame_score"].f1_score)
         print(res)
-    print(tot / cnt)
+    # print(tot / cnt)
     df["name"] = name
     df["mir_eval_onset_presion"] = mir_eval_onset_presion
     df["mir_eval_onset_recall"] = mir_eval_onset_recall

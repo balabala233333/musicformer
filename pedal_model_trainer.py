@@ -14,7 +14,9 @@ from model.listen_attend_and_spell import build_conformer_listen_attend_and_spel
 import tensorflow as tf
 
 tf.config.set_visible_devices([], 'GPU')
-
+torch.manual_seed(1234)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(1234)
 
 def pedal_model_train_step():
     token_config = TokenConfig()
@@ -23,7 +25,7 @@ def pedal_model_train_step():
     testset = PedalTestDataset(config,use_cache=True)
     data_loader = DataLoader(dataset, batch_size=8, collate_fn=collate_fn, num_workers=4, prefetch_factor=1,
                              shuffle=True)
-    test_loader = DataLoader(dataset, batch_size=8, collate_fn=collate_fn, num_workers=4, prefetch_factor=1,
+    test_loader = DataLoader(testset, batch_size=8, collate_fn=collate_fn, num_workers=4, prefetch_factor=1,
                              shuffle=True)
     epochs = PEDAL_MODEL_EPOCHS
     num_training_steps = epochs * len(data_loader)

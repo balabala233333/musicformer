@@ -15,7 +15,9 @@ import tensorflow as tf
 from model.listen_attend_and_spell import build_conformer_listen_attend_and_spell_from_config
 
 tf.config.set_visible_devices([], 'GPU')
-
+torch.manual_seed(1234)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(1234)
 
 def note_pedal_model_train_step():
     token_config = TokenConfig()

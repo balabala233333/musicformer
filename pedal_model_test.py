@@ -50,6 +50,7 @@ for pair in config.test_pairs:
             inputs = torch.unsqueeze(item.inputs, dim=0).to(token_config.device)
             input_lengths = torch.unsqueeze(item.input_lengths, dim=0).to(token_config.device)
             item.pred = model.recognize(inputs, input_lengths)[0]
+            print(item.pred)
         pred_ns = trans_tokens_to_midi(items, "res.midi")
         target_ns = note_seq.midi_file_to_note_sequence(
             pair.midi_file_name)

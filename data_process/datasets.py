@@ -106,6 +106,8 @@ def trans_path_to_raw_data(pair: FileNamePair) -> MidiAudioPair:
     audio = spectrograms.read_wave(audio_file_name, SAMPLE_RATE)
     midi = note_seq.midi_file_to_note_sequence(midi_file_name)
     for cc in midi.control_changes:
+        if cc.control_number!=64:
+            midi.control_changes.remove(cc)
         if cc.control_value >= 64:
             cc.control_value = 127
         else:
