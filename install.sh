@@ -6,3 +6,4 @@ pip install transformers
 pip install mir_eval
 pip uninstall scikit-learn
 pip install -U scikit-learn
+pip install torchaudio==0.13.1  --index-url https://download.pytorch.org/whl/cu116

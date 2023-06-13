@@ -4,6 +4,7 @@ from typing import Callable, Sequence, Tuple, Optional
 import numpy as np
 import torch
 
+from constant import BLANK_ID
 from data_process import note_event_codec
 from data_process.data_classes import NoteEventItem, PreprocessDataItem
 
@@ -75,11 +76,10 @@ def encoding_shifts(dataset: PreprocessDataItem, codec: note_event_codec.Codec) 
     shift_steps = 0
     total_shift_steps = 0
     events = torch.tensor(dataset.targets)
+    # print(events)
     output = torch.tensor([])
 
-
     for event in events:
-
         if codec.is_shift_event_index(event):
             shift_steps += 1
             total_shift_steps += 1
@@ -92,7 +92,6 @@ def encoding_shifts(dataset: PreprocessDataItem, codec: note_event_codec.Codec) 
                     output = torch.concat([output, torch.tensor([output_steps])], axis=0)
                     shift_steps -= output_steps
             output = torch.concat([output, torch.tensor([event])], axis=0)
-
-
+    # print(shift_steps,total_shift_steps)
     dataset.targets = output.long()
     return dataset

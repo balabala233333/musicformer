@@ -82,6 +82,7 @@ def compute_spectrogram(dataset: PreprocessDataItem, spectrogram_config) -> Prep
 def select_random_chunk(item: PreprocessDataItem, config: TokenConfig) -> PreprocessDataItem:
     length = config.inputs_length
     n_tokens = item.inputs.shape[0]
+    # print(length)
     start = random.randint(-length + 1, n_tokens - 1)
     end = min(start + length, n_tokens)
     start = max(start, 0)
