@@ -62,43 +62,25 @@ def note_model_train_step():
             inputs = inputs.to(token_config.device)
             input_lengths = input_lengths.to(token_config.device)
             target_lengths = target_lengths.to(token_config.device)
-            res,res_length = model(inputs, input_lengths, targets_in, target_lengths)
+            res, res_length = model(inputs, input_lengths)
 
-            # bz, t, _ = res.size()
-            res_length = torch.squeeze(res_length,-1)
-            loss = criterion(res,targets,res_length,target_lengths)
+            res_length = torch.squeeze(res_length, -1)
+            loss = criterion(res.permute(1, 0, 2), targets, res_length, target_lengths)
             # scheduler.get_lr()
             loss.backward()
             optimizer.step()
             scheduler.step()
-            # tokens = res.argmax(-1)[-1]
-            cnt = cnt + 1
-            if cnt % 100 == 0:
-                print("========================train{}:loss:{},lr:{}==========================".format(i, loss,
-                                                                                                       scheduler.get_last_lr()))
-            # print(tokens)
 
-        torch.cuda.empty_cache()
-        tot = 0
-        cnt = 0
-        model.eval()
-        for inputs, input_lengths, targets, target_lengths in test_loader:
-            targets_in = targets[:, :-1].to(token_config.device)
-            targets_out = targets[:, 1:].to(token_config.device)
-            inputs = inputs.to(token_config.device)
-            input_lengths = input_lengths.to(token_config.device)
-            target_lengths = target_lengths.to(token_config.device)
-            res = model(inputs, input_lengths, targets_in, target_lengths)
-            bz, t, _ = res.size()
-            loss = criterion(torch.squeeze(res, 0).view(bz * t, -1), torch.squeeze(targets_out.long(), 0).view(-1))
-            tot = tot + loss.item()
             cnt = cnt + 1
-            if cnt % 100 == 0:
-                print("========================test{}:loss:{}==========================".format(i, loss))
-        result.append(tot / cnt)
-        print(result)
-        torch.save(model.state_dict(),
-                   os.path.join(CHECKPOINT_PATH, "conformer_las_{}".format(i)))
+            # if cnt % 100 == 0:
+            res = res.argmax(-1)
+            x = res[0][res[0] != 0]
+            mask = torch.cat((torch.tensor([True]).cuda(), x[1:] != x[:-1]))
+            res = torch.masked_select(x, mask)
+            print(res)
+            print("========================train{}:loss:{},lr:{}==========================".format(i, loss,
+                                                                                                   scheduler.get_last_lr()))
+
 
 
 if __name__ == '__main__':

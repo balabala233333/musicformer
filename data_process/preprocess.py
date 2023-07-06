@@ -181,7 +181,7 @@ def trans_preprocess_data_item_to_train_data(data_item: PreprocessDataItem, voca
                                              token_config: TokenConfig) -> TrainItem:
     targets = vocabulary.decode_tokens(data_item.targets)
     inputs = data_item.inputs
-    inputs = torch.nn.functional.pad(inputs, (0, 0, 0, token_config.inputs_length - inputs.shape[0]), mode='constant',
+    inputs = torch.nn.functional.pad(inputs, (0, 0, 0, 2*token_config.inputs_length - inputs.shape[0]), mode='constant',
                                      value=0)
 
     target_lengths = torch.tensor([targets.shape[0]])

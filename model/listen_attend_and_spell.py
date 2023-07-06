@@ -61,12 +61,13 @@ class CTCLSTMModel(nn.Module):
         self.encoder = encoder
         self.lstm = lstm
         self.relu = nn.ReLU()
-        self.out = nn.Linear(encoder.output_dim, n_class)
+        self.out = nn.Linear(2*encoder.output_dim, n_class)
 
     def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tuple[Tensor, Tensor]:
         outputs, output_lengths = self.encoder(inputs, input_lengths)
-        outputs = self.lstm(outputs)
+        outputs, _ = self.lstm(outputs)
         outputs = self.relu(outputs)
+        print(outputs.shape)
         outputs = self.out(outputs)
         outputs = F.log_softmax(outputs, -1)
         return outputs, output_lengths
@@ -83,7 +84,8 @@ class CTCLSTMModel(nn.Module):
         outputs = list()
 
         encoder_outputs, _ = self.encoder(inputs, input_lengths)
-        encoder_outputs = self.lstm(encoder_outputs)
+        encoder_outputs, _ = self.lstm(encoder_outputs)
+
         encoder_outputs = self.relu(encoder_outputs)
         for encoder_output in encoder_outputs:
             predict = self.decode(encoder_output)
