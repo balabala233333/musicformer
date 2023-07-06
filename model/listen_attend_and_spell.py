@@ -67,7 +67,7 @@ class CTCLSTMModel(nn.Module):
         outputs, output_lengths = self.encoder(inputs, input_lengths)
         outputs, _ = self.lstm(outputs)
         outputs = self.relu(outputs)
-        print(outputs.shape)
+        # print(outputs.shape)
         outputs = self.out(outputs)
         outputs = F.log_softmax(outputs, -1)
         return outputs, output_lengths
