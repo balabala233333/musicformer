@@ -4,14 +4,92 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from torch import Tensor
-from typing import List
+from typing import List, Tuple
 
 from model.encoder import Conformer
-from model.decoder import TransformerDecoder
+from model.decoder import TransformerDecoder, LSTMDecoder
 
 from data_process.vocabulary import TokensVocabulary, build_codec
 
 from constant import TokenConfig
+
+
+class CTCModel(nn.Module):
+    def __init__(
+            self,
+            encoder: nn.Module,
+            n_class: int,
+    ):
+        super().__init__()
+        self.encoder = encoder
+        self.out = nn.Linear(encoder.output_dim, n_class)
+
+    def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tuple[Tensor, Tensor]:
+        outputs, output_lengths = self.encoder(inputs, input_lengths)
+        outputs = self.out(outputs)
+        outputs = F.log_softmax(outputs, -1)
+        return outputs, output_lengths
+
+    @torch.no_grad()
+    def decode(self, encoder_output: Tensor) -> str:
+        encoder_output = encoder_output.unsqueeze(0)
+        outputs = F.log_softmax(self.out(encoder_output), -1)
+        argmax = outputs.squeeze(0).argmax(-1)
+        return self.text_process.decode(argmax)
+
+    @torch.no_grad()
+    def recognize(self, inputs: Tensor, input_lengths: Tensor) -> List[str]:
+        outputs = list()
+
+        encoder_outputs, _ = self.encoder(inputs, input_lengths)
+
+        for encoder_output in encoder_outputs:
+            predict = self.decode(encoder_output)
+            outputs.append(predict)
+
+        return outputs
+
+
+class CTCLSTMModel(nn.Module):
+    def __init__(
+            self,
+            encoder: nn.Module,
+            lstm: nn.Module,
+            n_class: int,
+    ):
+        super().__init__()
+        self.encoder = encoder
+        self.lstm = lstm
+        self.relu = nn.ReLU()
+        self.out = nn.Linear(encoder.output_dim, n_class)
+
+    def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tuple[Tensor, Tensor]:
+        outputs, output_lengths = self.encoder(inputs, input_lengths)
+        outputs = self.lstm(outputs)
+        outputs = self.relu(outputs)
+        outputs = self.out(outputs)
+        outputs = F.log_softmax(outputs, -1)
+        return outputs, output_lengths
+
+    @torch.no_grad()
+    def decode(self, encoder_output: Tensor) -> str:
+        encoder_output = encoder_output.unsqueeze(0)
+        outputs = F.log_softmax(self.out(encoder_output), -1)
+        argmax = outputs.squeeze(0).argmax(-1)
+        return argmax
+
+    @torch.no_grad()
+    def recognize(self, inputs: Tensor, input_lengths: Tensor) -> List[str]:
+        outputs = list()
+
+        encoder_outputs, _ = self.encoder(inputs, input_lengths)
+        encoder_outputs = self.lstm(encoder_outputs)
+        encoder_outputs = self.relu(encoder_outputs)
+        for encoder_output in encoder_outputs:
+            predict = self.decode(encoder_output)
+            outputs.append(predict)
+
+        return outputs
 
 
 class LAS(nn.Module):
@@ -77,6 +155,43 @@ class LAS(nn.Module):
             outputs.append(predict)
 
         return outputs
+
+
+def build_conformer_ctc_from_checkpoint(path):
+    codec = build_codec()
+    token_config = TokenConfig()
+    conformer_encoder = Conformer(input_dim=token_config.encoder_input_dim, encoder_dim=token_config.encoder_input_dim,
+                                  num_encoder_layers=token_config.num_encoder_layers,
+                                  num_attention_heads=token_config.num_encoder_attention_heads)
+    conformer_ctc = CTCModel(conformer_encoder, TokensVocabulary(codec.num_classes).vocabulary_size).to(
+        token_config.device)
+    state_dict = torch.load(path, map_location=token_config.device)
+    conformer_ctc.load_state_dict(state_dict)
+    return conformer_ctc
+
+
+def build_conformer_lstm_ctc():
+    codec = build_codec()
+    token_config = TokenConfig()
+    conformer_encoder = Conformer(input_dim=token_config.encoder_input_dim, encoder_dim=token_config.encoder_input_dim,
+                                  num_encoder_layers=token_config.num_encoder_layers,
+                                  num_attention_heads=token_config.num_encoder_attention_heads)
+    lstm = nn.LSTM(token_config.decoder_input_dim, token_config.decoder_input_dim, num_layers=1, bias=True,
+                   batch_first=True, dropout=0.1, bidirectional=True)
+    conformer_ctc = CTCLSTMModel(conformer_encoder, lstm,TokensVocabulary(codec.num_classes).vocabulary_size).to(
+        token_config.device)
+    return conformer_ctc
+
+
+def build_conformer_ctc():
+    codec = build_codec()
+    token_config = TokenConfig()
+    conformer_encoder = Conformer(input_dim=token_config.encoder_input_dim, encoder_dim=token_config.encoder_input_dim,
+                                  num_encoder_layers=token_config.num_encoder_layers,
+                                  num_attention_heads=token_config.num_encoder_attention_heads)
+    conformer_ctc = CTCModel(conformer_encoder, TokensVocabulary(codec.num_classes).vocabulary_size).to(
+        token_config.device)
+    return conformer_ctc
 
 
 def build_conformer_listen_attend_and_spell_from_config():

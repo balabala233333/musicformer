@@ -24,18 +24,19 @@ def note_model_train_step():
     token_config = TokenConfig()
     config = build_maestrov3_dataset()
     dataset = TrainDataset(config, use_cache=True)
-    data_loader = DataLoader(dataset, batch_size=BATCH_SIZE, collate_fn=collate_fn, num_workers=4, prefetch_factor=2,
+    data_loader = DataLoader(dataset, batch_size=BATCH_SIZE, collate_fn=collate_fn, num_workers=4, prefetch_factor=2,shuffle=True
                              )
     testset = TestDataset(config, use_cache=True)
-    test_loader = DataLoader(testset, batch_size=BATCH_SIZE, collate_fn=collate_fn, num_workers=4, prefetch_factor=2,
+    test_loader = DataLoader(testset, batch_size=10, collate_fn=collate_fn, num_workers=4, prefetch_factor=2,shuffle=True
                              )
     epochs = NOTE_MODEL_EPOCHS
     num_training_steps = epochs * len(data_loader)
     scheduler_warmup_ratio = NOTE_MODEL_SCHEDULER_WARMUP_RATIO
     num_warmup_steps = int(num_training_steps * scheduler_warmup_ratio)
 
+    # model = build_conformer_lstm()
     model = build_conformer_listen_attend_and_spell_from_config()
-    # model = load_conformer_listen_attend_and_spell_from_checkpoint("/root/autodl-tmp/conformer/conformer_las_46")
+    # model = load_conformer_listen_attend_and_spell_from_checkpoint("/home/ylwang/share/mt3/conformer/conformer_las_145")
     criterion = CrossEntropyLoss()
     optimizer = AdamW(model.parameters(), lr=LEARNING_RATE, betas=BETAS, eps=EPS,
                       weight_decay=WEIGHT_DECAY)
@@ -76,10 +77,10 @@ def note_model_train_step():
                                                                                                        scheduler.get_last_lr()))
             # print(tokens)
 
+        torch.cuda.empty_cache()
         tot = 0
         cnt = 0
         model.eval()
-        torch.cuda.empty_cache()
         for inputs, input_lengths, targets, target_lengths in test_loader:
             # print("test",i)
             # continue

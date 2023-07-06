@@ -6,7 +6,7 @@ from torch import nn, Tensor
 
 from constant import TokenConfig, LSTM_LAYERS
 from data_process.vocabulary import build_codec, TokensVocabulary
-from model.decoder import LSTMDecoder
+from model.decoder import LSTMDecoder, TransformerDecoder
 from model.encoder import Conformer
 
 
@@ -34,7 +34,7 @@ class RNNTModel(nn.Module):
             target_lengths: Tensor,
     ) -> Tensor:
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs, hidden_state = self.decoder(targets)
+        decoder_outputs, hidden_state = self.decoder(targets,encoder_outputs)
 
         outputs = self.joint(encoder_outputs, decoder_outputs)
         return outputs, encoder_output_lengths
@@ -93,7 +93,8 @@ class RNNTModel(nn.Module):
             decoder_input = torch.LongTensor([[pred_token]]).to(self.device)
 
         pred_tokens = torch.LongTensor(pred_tokens)
-        return pred_token
+
+        return pred_tokens
 
     @torch.no_grad()
     def recognize(self, inputs: Tensor, input_lengths: Tensor) -> List[str]:
@@ -109,7 +110,7 @@ class RNNTModel(nn.Module):
         outputs = list()
 
         encoder_outputs, output_lengths = self.encoder(inputs, input_lengths)
-        max_length = encoder_outputs.size(1)
+        max_length = 1024
 
         for encoder_output in encoder_outputs:
             decoded_seq = self.decode(encoder_output, max_length)
@@ -125,9 +126,31 @@ def build_conformer_transducer():
     conformer_encoder = Conformer(input_dim=token_config.encoder_input_dim, encoder_dim=token_config.encoder_input_dim,
                                   num_encoder_layers=token_config.num_encoder_layers,
                                   num_attention_heads=token_config.num_encoder_attention_heads)
-    lstm_decoder = LSTMDecoder(n_class=codec.num_classes, encoder_output_dim=token_config.decoder_input_dim,
-                               num_layers=LSTM_LAYERS,
-                               hidden_size=token_config.decoder_input_dim)
-    model = RNNTModel(encoder=conformer_encoder, decoder=lstm_decoder, n_class=TokensVocabulary(codec.num_classes).vocabulary_size).to(
+    transformer_decoder = TransformerDecoder(n_class=codec.num_classes, d_model=token_config.decoder_input_dim,
+                                             nhead=token_config.num_decoder_attention_heads,
+                                             num_layers=token_config.num_decoder_layers, device=token_config.device)
+
+    model = RNNTModel(encoder=conformer_encoder, decoder=transformer_decoder, n_class=TokensVocabulary(codec.num_classes).vocabulary_size).to(
         token_config.device)
+    return model
+
+
+def load_conformer_transducer_from_checkpoint(path: str):
+    codec = build_codec()
+    token_config = TokenConfig()
+
+    conformer_encoder = Conformer(input_dim=token_config.encoder_input_dim, encoder_dim=token_config.encoder_input_dim,
+                                  num_encoder_layers=token_config.num_encoder_layers,
+                                  num_attention_heads=token_config.num_encoder_attention_heads)
+    transformer_decoder = TransformerDecoder(n_class=codec.num_classes, d_model=token_config.decoder_input_dim,
+                                             nhead=token_config.num_decoder_attention_heads,
+                                             num_layers=token_config.num_decoder_layers, device=token_config.device)
+
+    model = RNNTModel(encoder=conformer_encoder, decoder=transformer_decoder,
+                      n_class=TokensVocabulary(codec.num_classes).vocabulary_size).to(
+        token_config.device)
+
+    state_dict = torch.load(path, map_location=token_config.device)
+    model.load_state_dict(state_dict)
+
     return model

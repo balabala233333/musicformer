@@ -19,7 +19,7 @@ import tensorflow as tf
 
 tf.config.set_visible_devices([], 'GPU')
 
-
+torch.set_default_dtype(torch.float16)
 def collate_fn(batch):
     inputs = []
     targets = []
@@ -61,7 +61,7 @@ dataset = PedalNoteDataset(config)
 data_loader = DataLoader(dataset, batch_size=BATCH_SIZE, collate_fn=collate_fn, num_workers=4, prefetch_factor=2)
 
 testset = PedalNoteTestset(config)
-test_loader = DataLoader(testset, batch_size=BATCH_SIZE, collate_fn=collate_fn, num_workers=4, prefetch_factor=2)
+test_loader = DataLoader(testset, batch_size=8, collate_fn=collate_fn, num_workers=4, prefetch_factor=2)
 epochs = MUSICFORMER_MODEL_EPOCHS
 num_training_steps = epochs * len(data_loader)
 scheduler_warmup_ratio = MUSICFORMER_MODEL_SCHEDULER_WARMUP_RATIO

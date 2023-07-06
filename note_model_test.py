@@ -32,8 +32,6 @@ frame_f1 = []
 mir_eval_vel_f1 = []
 mir_eval_vel_recall = []
 mir_eval_vel_presion = []
-cnt = 0
-tot = 0
 
 if __name__ == '__main__':
     model = load_conformer_listen_attend_and_spell_from_checkpoint(TEST_NOTE_CHECKPOINT_PATH)
@@ -47,7 +45,7 @@ if __name__ == '__main__':
             inputs = torch.unsqueeze(item.inputs, dim=0).to(token_config.device)
             input_lengths = torch.unsqueeze(item.input_lengths, dim=0).to(token_config.device)
             item.pred = model.recognize(inputs, input_lengths)[0]
-            print(item.pred)
+            # print(item.pred)
         pred_ns = trans_tokens_to_midi(items, "res.midi")
         target_ns = note_seq.midi_file_to_note_sequence(
             pair.midi_file_name)
@@ -58,14 +56,13 @@ if __name__ == '__main__':
         mir_eval_onset_offset_presion.append(res["onset_offset_score"].precision_score)
         mir_eval_onset_offset_recall.append(res["onset_offset_score"].recall_score)
         mir_eval_onset_offset_f1.append(res["onset_offset_score"].f1_score)
-        mir_eval_onset_offset_presion.append(res["onset_offset_velocity_score"].precision_score)
-        mir_eval_onset_offset_recall.append(res["onset_offset_velocity_score"].recall_score)
-        mir_eval_onset_offset_f1.append(res["onset_offset_velocity_score"].f1_score)
+        mir_eval_vel_presion.append(res["onset_offset_velocity_score"].precision_score)
+        mir_eval_vel_recall.append(res["onset_offset_velocity_score"].recall_score)
+        mir_eval_vel_f1.append(res["onset_offset_velocity_score"].f1_score)
         frame_precision.append(res["frame_score"].precision_score)
         frame_recall.append(res["frame_score"].recall_score)
         frame_f1.append(res["frame_score"].f1_score)
         print(res)
-    # print(tot / cnt)
     df["name"] = name
     df["mir_eval_onset_presion"] = mir_eval_onset_presion
     df["mir_eval_onset_recall"] = mir_eval_onset_recall
@@ -79,7 +76,7 @@ if __name__ == '__main__':
     df["frame_f1"] = frame_f1
     df["frame_recall"] = frame_recall
     df["frame_precision"] = frame_precision
-    df.to_excel("res.xlsx")
+    df.to_excel("res-36.xls")
     print("onset_precision:", sum(mir_eval_onset_presion) / len(mir_eval_onset_presion))
     print("onset_recall:", sum(mir_eval_onset_recall) / len(mir_eval_onset_recall))
     print("onset_f1:", sum(mir_eval_onset_f1) / len(mir_eval_onset_f1))
